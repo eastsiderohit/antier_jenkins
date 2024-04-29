@@ -34,7 +34,8 @@ jobs:
         mask-password: false
         registry-type: private
         skip-logout: false
-        region: eu-west-1
+      env:
+        AWS_REGION: eu-west-1  
 
     - name: Build, tag, and push the image to Amazon ECR
       id: build-image
