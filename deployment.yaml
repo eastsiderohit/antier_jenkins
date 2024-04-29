@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: explorer-api
+  labels:
+    app: explorer-api
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/service.serversscheme: https
+  namespace: stage-explorer-ns
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%  
+  selector:
+    matchLabels:
+      app: explorer-api
+  template:
+    metadata:
+      labels:
+        app: explorer-api
+    spec:
+      containers:
+        - name: explorer-api
+          image: 096085577054.dkr.ecr.ap-southeast-1.amazonaws.com/stage-load-test-shido-api:$DATE_TIME_TAG
+          imagePullPolicy: IfNotPresent
+          envFrom:
+          - configMapRef:
+              name: explorer-api-cm
+          name: explorer-api
+          ports:
+            - containerPort: 7200
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 7200
+            initialDelaySeconds: 100
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 7200
+            initialDelaySeconds: 120
+            periodSeconds: 10
+          # envFrom:
+          # - secretRef:
+          #     name: explorer-frontend-secrets
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m                                                                                                              
+      restartPolicy: Always
