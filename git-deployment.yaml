@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-custom-deployment
+  labels:
+    app: my-custom-app
+spec:
+  selector:
+    matchLabels:
+        app: my-custom-app
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: my-custom-app
+    spec:
+      containers:
+        - name: my-custom-container
+          image: 096085577054.dkr.ecr.eu-west-1.amazonaws.com/stage-shido-jenkins:latest
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          imagePullPolicy: Always
