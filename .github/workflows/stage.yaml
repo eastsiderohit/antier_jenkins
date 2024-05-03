@@ -38,8 +38,8 @@ jobs:
         id: build-and-push
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ if eq(github.ref, 'refs/heads/stage'): 'eu-west-1-stage-shido-jenkins'; else: 'us-east-1-stage-shido-jenkins' 
+          ECR_REPOSITORY: ${{ if eq(github.ref, 'refs/heads/stage'): 'eu-west-1-stage-shido-jenkins'; else: 'us-east-1-stage-shido-jenkins' }}
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REGISTRY:$IMAGE_TAG
