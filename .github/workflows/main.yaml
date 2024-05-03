@@ -1,25 +1,26 @@
-name: Push the Docker image to AWS ECR Repo
+name: Push the Docker image to AWS ECR Repos (Multi-Region)
 on:
   push:
     branches:
       - stage
+
 jobs:
-  Build:
-    name: Build
+  Build-Dev:
+    name: Build and Push to Dev Region (eu-west-1)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (Dev Region)
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
 
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: Login to Amazon ECR (Dev Region)
+        id: login-ecr-dev
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Get commit hash
@@ -30,11 +31,48 @@ jobs:
         id: get-timestamp
         run: echo "::set-output name=timestamp::$(date +'%Y-%m-%d-%H-%M')"
 
-      - name: Build, tag, and push the image to Amazon ECR
-        id: build-image
+      - name: Build, tag, and push image to Amazon ECR (Dev Region)
+        id: build-image-dev
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+          ECR_REGISTRY: ${{ steps.login-ecr-dev.outputs.registry }}
+          ECR_REPOSITORY: eu-west-1-dev-${{ secrets.REPO_NAME }}  # Hardcoded Dev Region Repository
+          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  Build-Prod:
+    name: Build and Push to Prod Region (us-east-1)
+    runs-on: ubuntu-latest
+    needs: [Build-Dev]  # Wait for Dev build to complete before Prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials (Prod Region)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR (Prod Region)
+        id: login-ecr-prod
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get commit hash
+        id: get-commit-hash
+        run: echo "::set-output name=commit-hash::$(git rev-parse --short HEAD)"
+
+      - name: Get timestamp
+        id: get-timestamp
+        run: echo "::set-output name=timestamp::$(date +'%Y-%m-%d-%H-%M')"
+
+      - name: Build, tag, and push image to Amazon ECR (Prod Region)
+        id: build-image-prod
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
+          ECR_REPOSITORY: us-east-1-prod-${{ secrets.REPO_NAME }}  # Hardcoded Prod Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
