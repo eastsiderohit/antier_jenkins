@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - stage
+      - main
 
 jobs:
   Build-Dev:
     name: Build and Push to Dev Region (eu-west-1)
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/stage'  # Only run for pushes to the 'stage' branch
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -35,7 +37,7 @@ jobs:
         id: build-image-dev
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-dev.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}  # Hardcoded Dev Region Repository
+          ECR_REPOSITORY: eu-west-1-dev-${{ secrets.REPO_NAME }}  # Hardcoded Dev Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -44,6 +46,7 @@ jobs:
   Build-Prod:
     name: Build and Push to Prod Region (us-east-1)
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Only run for pushes to the 'main' branch
     needs: [Build-Dev]  # Wait for Dev build to complete before Prod
     steps:
       - name: Checkout
@@ -72,7 +75,7 @@ jobs:
         id: build-image-prod
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.REPO_NAME }}  # Hardcoded Prod Region Repository
+          ECR_REPOSITORY: us-east-1-prod-${{ secrets.REPO_NAME }}  # Hardcoded Prod Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
