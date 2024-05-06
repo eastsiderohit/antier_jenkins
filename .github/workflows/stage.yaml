@@ -75,7 +75,7 @@ jobs:
         id: build-image-prod
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
-          ECR_REPOSITORY: stage-shido-jenkins  # Hardcoded Prod Region Repository
+          ECR_REPOSITORY: prod-shido-jenkins  # Hardcoded Prod Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
