@@ -37,7 +37,7 @@ jobs:
         id: build-image-dev
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-dev.outputs.registry }}
-          ECR_REPOSITORY: eu-west-1-dev-${{ secrets.REPO_NAME }}  # Hardcoded Dev Region Repository
+          ECR_REPOSITORY: stage-shido-jenkins  # Hardcoded Dev Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -75,7 +75,7 @@ jobs:
         id: build-image-prod
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
-          ECR_REPOSITORY: us-east-1-prod-${{ secrets.REPO_NAME }}  # Hardcoded Prod Region Repository
+          ECR_REPOSITORY: stage-shido-jenkins # Hardcoded Prod Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
