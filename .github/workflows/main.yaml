@@ -1,16 +1,31 @@
+# main_workflow.yml
+
 name: Push the Docker image to AWS ECR Repos (Multi-Region)
 on:
   push:
-    branches:
-      - stage
-      - main
 
 jobs:
   Build-Dev:
     name: Build and Push to Dev Region (eu-west-1)
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/stage'  # Only run for pushes to the 'stage' branch
     steps:
+      - name: Include variables
+        id: vars
+        uses: actions/github-script@0.9.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const variables = fs.readFileSync('variables.yml', 'utf8');
+            console.log(variables);
+            const branch = JSON.parse(variables).branches.find(branch => branch.name === '${{ github.ref }}');
+            console.log(branch.dev_repository);
+            console.log(branch.prod_repository);
+            console.log(branch.name); // Output branch name
+            process.env['DEV_REPOSITORY'] = branch.dev_repository;
+            process.env['PROD_REPOSITORY'] = branch.prod_repository;
+            process.env['BRANCH_NAME'] = branch.name; // Set branch name as an environment variable
+
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -37,8 +52,8 @@ jobs:
         id: build-image-dev
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-dev.outputs.registry }}
-          ECR_REPOSITORY: stage-shido-jenkins  # Hardcoded Dev Region Repository
-          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
+          ECR_REPOSITORY: ${{ env.DEV_REPOSITORY }}  # Dynamically populated Dev Region Repository
+          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}-${{ env.BRANCH_NAME }} # Append branch name to the tag
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -46,9 +61,25 @@ jobs:
   Build-Prod:
     name: Build and Push to Prod Region (us-east-1)
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/main'  # Only run for pushes to the 'main' branch
     needs: [Build-Dev]  # Wait for Dev build to complete before Prod
     steps:
+      - name: Include variables
+        id: vars
+        uses: actions/github-script@0.9.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const variables = fs.readFileSync('variables.yml', 'utf8');
+            console.log(variables);
+            const branch = JSON.parse(variables).branches.find(branch => branch.name === '${{ github.ref }}');
+            console.log(branch.dev_repository);
+            console.log(branch.prod_repository);
+            console.log(branch.name); // Output branch name
+            process.env['DEV_REPOSITORY'] = branch.dev_repository;
+            process.env['PROD_REPOSITORY'] = branch.prod_repository;
+            process.env['BRANCH_NAME'] = branch.name; // Set branch name as an environment variable
+
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -75,8 +106,8 @@ jobs:
         id: build-image-prod
         env:
           ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
-          ECR_REPOSITORY: prod-shido-jenkins # Hardcoded Prod Region Repository
-          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
+          ECR_REPOSITORY: ${{ env.PROD_REPOSITORY }}  # Dynamically populated Prod Region Repository
+          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}-${{ env.BRANCH_NAME }} # Append branch name to the tag
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
