@@ -1,15 +1,11 @@
-# main_workflow.yml
-
 name: Push the Docker image to AWS ECR Repos (Multi-Region)
 on:
   push:
-    branches: []
 
 jobs:
   Build-Dev:
     name: Build and Push to Dev Region (eu-west-1)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/stage'  # Only run for pushes to the 'stage' branch
     steps:
       - name: Include variables
         id: vars
@@ -18,20 +14,51 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const variables = fs.readFileSync('variables.yaml', 'utf8');
+            const variables = fs.readFileSync('variables.yml', 'utf8');
             console.log(variables);
-            const branch = JSON.parse(variables).branches.find(branch => branch.name === 'stage');
+            const branch = JSON.parse(variables).branches.find(branch => branch.name === '${{ github.ref }}');
             console.log(branch.dev_repository);
             console.log(branch.prod_repository);
+            console.log(branch.name); // Output branch name
             process.env['DEV_REPOSITORY'] = branch.dev_repository;
             process.env['PROD_REPOSITORY'] = branch.prod_repository;
+            process.env['BRANCH_NAME'] = branch.name; // Set branch name as an environment variable
 
-      # Rest of the steps remain the same
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials (Dev Region)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Login to Amazon ECR (Dev Region)
+        id: login-ecr-dev
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get commit hash
+        id: get-commit-hash
+        run: echo "::set-output name=commit-hash::$(git rev-parse --short HEAD)"
+
+      - name: Get timestamp
+        id: get-timestamp
+        run: echo "::set-output name=timestamp::$(date +'%Y-%m-%d-%H-%M')"
+
+      - name: Build, tag, and push image to Amazon ECR (Dev Region)
+        id: build-image-dev
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-dev.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.DEV_REPOSITORY }}  # Dynamically populated Dev Region Repository
+          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}-${{ env.BRANCH_NAME }} # Append branch name to the tag
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
   Build-Prod:
     name: Build and Push to Prod Region (us-east-1)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'  # Only run for pushes to the 'main' branch
     needs: [Build-Dev]  # Wait for Dev build to complete before Prod
     steps:
       - name: Include variables
@@ -41,12 +68,44 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const variables = fs.readFileSync('variables.yaml', 'utf8');
+            const variables = fs.readFileSync('variables.yml', 'utf8');
             console.log(variables);
-            const branch = JSON.parse(variables).branches.find(branch => branch.name === 'main');
+            const branch = JSON.parse(variables).branches.find(branch => branch.name === '${{ github.ref }}');
             console.log(branch.dev_repository);
             console.log(branch.prod_repository);
+            console.log(branch.name); // Output branch name
             process.env['DEV_REPOSITORY'] = branch.dev_repository;
             process.env['PROD_REPOSITORY'] = branch.prod_repository;
+            process.env['BRANCH_NAME'] = branch.name; // Set branch name as an environment variable
 
-      # Rest of the steps remain the same
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials (Prod Region)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR (Prod Region)
+        id: login-ecr-prod
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get commit hash
+        id: get-commit-hash
+        run: echo "::set-output name=commit-hash::$(git rev-parse --short HEAD)"
+
+      - name: Get timestamp
+        id: get-timestamp
+        run: echo "::set-output name=timestamp::$(date +'%Y-%m-%d-%H-%M')"
+
+      - name: Build, tag, and push image to Amazon ECR (Prod Region)
+        id: build-image-prod
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.PROD_REPOSITORY }}  # Dynamically populated Prod Region Repository
+          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}-${{ env.BRANCH_NAME }} # Append branch name to the tag
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
