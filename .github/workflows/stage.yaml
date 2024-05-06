@@ -9,7 +9,7 @@ jobs:
   Build-Dev:
     name: Build and Push to Dev Region (eu-west-1)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/stage'  # Only run for pushes to the 'stage' branch
+    #if: github.ref == 'refs/heads/stage'  # Only run for pushes to the 'stage' branch
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -46,7 +46,7 @@ jobs:
   Build-Prod:
     name: Build and Push to Prod Region (us-east-1)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'  # Only run for pushes to the 'main' branch
+    #if: github.ref == 'refs/heads/main'  # Only run for pushes to the 'main' branch
     needs: [Build-Dev]  # Wait for Dev build to complete before Prod
     steps:
       - name: Checkout
