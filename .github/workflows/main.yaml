@@ -14,7 +14,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const variables = fs.readFileSync('variables.yml', 'utf8');
+            const variables = fs.readFileSync('variables.yaml', 'utf8');
             console.log(variables);
             const branch = JSON.parse(variables).branches.find(branch => branch.name === '${{ github.ref }}');
             console.log(branch.dev_repository);
@@ -68,7 +68,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const variables = fs.readFileSync('variables.yml', 'utf8');
+            const variables = fs.readFileSync('variables.yaml', 'utf8');
             console.log(variables);
             const branch = JSON.parse(variables).branches.find(branch => branch.name === '${{ github.ref }}');
             console.log(branch.dev_repository);
