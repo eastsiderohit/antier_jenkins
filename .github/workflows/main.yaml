@@ -11,7 +11,7 @@ jobs:
         id: vars
         uses: actions/github-script@0.9.0
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.REPO_TOKEN }}
           script: |
             const fs = require('fs');
             const variables = fs.readFileSync('variables.yaml', 'utf8');
