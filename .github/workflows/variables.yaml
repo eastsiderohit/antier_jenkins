@@ -1,7 +1,0 @@
-branches:
-  - name: stage
-    dev_repository: stage-shido-jenkins
-    prod_repository: prod-shido-jenkins
-  - name: main
-    dev_repository: stage-shido-jenkins
-    prod_repository: prod-shido-jenkins
