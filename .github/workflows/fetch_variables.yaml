@@ -17,6 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Fetch variables
+        run: |
+          # Run any script or command to fetch the variables you need
+          # For example, if your variables are stored in a YAML file named 'variables.yaml'
+          echo "Fetching variables..."
+          cp .github/workflows/fetch_variables.yaml $GITHUB_WORKSPACE/fetch_variables.yaml
+
       - name: Parse variables
         id: parse-vars
         run: |
