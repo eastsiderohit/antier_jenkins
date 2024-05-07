@@ -22,22 +22,15 @@ jobs:
           # For demonstration purposes, let's just echo some values
           echo "::set-output name=prod-repository::prod-shido-jenkins"
 
-  trigger-build:
-    needs: fetch-variables
-    runs-on: ubuntu-latest
-    steps:
+      # Trigger the main workflow
       - name: Trigger Main Workflow
-        uses: actions/github-script@0.9.0
+        uses: peter-evans/create-pull-request@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const response = await github.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'main.yaml',
-              ref: 'main', // Update to the default branch name if needed
-              inputs: {
-                PROD_REPOSITORY: '${{ needs.fetch-variables.outputs.prod-repository }}'
-              }
-            });
-            console.log(response);
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: trigger-main-workflow
+          commit-message: Trigger Main Workflow
+          title: Trigger Main Workflow
+          body: |
+            This pull request is used to trigger the main workflow.
+        env:
+          PROD_REPOSITORY: ${{ steps.parse-vars.outputs.prod-repository }}
