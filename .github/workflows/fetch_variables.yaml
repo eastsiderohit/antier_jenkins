@@ -22,8 +22,8 @@ jobs:
         run: |
           # Here you can parse your variables.yaml file or fetch variables from any source
           # For demonstration purposes, let's just echo some values
-          echo "::set-output name=dev-repository::your-dev-repo"
-          echo "::set-output name=prod-repository::your-prod-repo"
+          echo "::set-output name=dev-repository::stage-shido-jenkins"
+          echo "::set-output name=prod-repository::prod-shido-jenkins"
 
   trigger-build:
     needs: fetch-variables
