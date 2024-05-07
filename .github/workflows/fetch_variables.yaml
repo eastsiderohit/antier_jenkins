@@ -4,54 +4,37 @@ on:
   push:
     branches:
       - main
-      - stage
 
 jobs:
   fetch-variables:
     runs-on: ubuntu-latest
     outputs:
-      dev-repository: ${{ steps.parse-vars.outputs.dev-repository }}
       prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Fetch variables
-        run: |
-          # Run any script or command to fetch the variables you need
-          # For example, if your variables are stored in a YAML file named 'variables.yaml'
-          echo "Fetching variables..."
-          cp .github/workflows/fetch_variables.yaml $GITHUB_WORKSPACE/fetch_variables.yaml
-
       - name: Parse variables
         id: parse-vars
         run: |
           # Here you can parse your variables.yaml file or fetch variables from any source
           # For demonstration purposes, let's just echo some values
-          echo "::set-output name=dev-repository::stage-shido-jenkins"
           echo "::set-output name=prod-repository::prod-shido-jenkins"
 
-  trigger-build:
-    needs: fetch-variables
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger original workflow
+      # Trigger the main workflow
+      - name: Trigger Main Workflow
         uses: actions/github-script@0.9.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const workflows = context.payload.client.runs.listWorkflowRuns.endpoint.merge({ owner: context.repo.owner, repo: context.repo.repo, status: 'queued' });
-            const response = await context.github.paginate(workflows);
-            const buildWorkflow = response.filter(run => run.workflow_name === 'Push the Docker image to AWS ECR Repos (Multi-Region)');
-            if (buildWorkflow.length > 0) {
-              await context.github.actions.reRunWorkflow({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: buildWorkflow[0].id,
-                inputs: {
-                  DEV_REPOSITORY: '${{ needs.fetch-variables.outputs.dev-repository }}',
-                  PROD_REPOSITORY: '${{ needs.fetch-variables.outputs.prod-repository }}'
-                }
-              });
-            }
+            const response = await context.github.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'main.yaml',
+              ref: 'refs/heads/main',
+              inputs: {
+                PROD_REPOSITORY: '${{ steps.parse-vars.outputs.prod-repository }}'
+              }
+            });
+            console.log(response);
