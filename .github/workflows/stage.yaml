@@ -53,10 +53,10 @@ jobs:
       # Here you would continue with steps to build and push your Docker image for Prod Region
       # For example:
       - name: Build Docker image for Prod
-        run: docker build -t $PROD_REPOSITORY:$IMAGE_TAG .
+        run: docker build -t "$PROD_REPOSITORY:$IMAGE_TAG" .
       
       - name: Tag Docker image for Prod
-        run: docker tag $PROD_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        run: docker tag "$PROD_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
       
       - name: Push Docker image to ECR for Prod
-        run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        run: docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
