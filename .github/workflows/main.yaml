@@ -2,7 +2,8 @@ name: Push the Docker image to AWS ECR Repos (Multi-Region)
 on:
   push:
     branches:
-      - stage
+      - main
+      
 
 jobs:
   Fetch-Variables:
@@ -13,23 +14,23 @@ jobs:
         uses: ./.github/workflows/fetch_variables.yaml
         id: vars
 
-  Build-Dev:
-    name: Build and Push to Dev Region (eu-west-1)
+  Build-Prod:
+    name: Build and Push to Prod Region (us-east-1)
     runs-on: ubuntu-latest
     needs: [Fetch-Variables]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Continue with your Dev build steps using the fetched variables
-      - name: Configure AWS credentials (Dev Region)
+      # Continue with your Prod build steps using the fetched variables
+      - name: Configure AWS credentials (Prod Region)
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+          aws-region: us-east-1
 
-      - name: Login to Amazon ECR (Dev Region)
+      - name: Login to Amazon ECR (Prod Region)
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Get commit hash
@@ -40,14 +41,12 @@ jobs:
         id: get-timestamp
         run: echo "::set-output name=timestamp::$(date +'%Y-%m-%d-%H-%M')"
 
-      - name: Build, tag, and push image to Amazon ECR (Dev Region)
-        id: build-image-dev
+      - name: Build, tag, and push image to Amazon ECR (Prod Region)
+        id: build-image-prod
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr-dev.outputs.registry }}
-          ECR_REPOSITORY: ${{ env.DEV_REPOSITORY }}  # Dynamically populated Dev Region Repository
+          ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.PROD_REPOSITORY }}  # Dynamically populated Prod Region Repository
           IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}-${{ env.BRANCH_NAME }} # Append branch name to the tag
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-  
