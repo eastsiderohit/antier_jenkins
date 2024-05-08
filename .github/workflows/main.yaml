@@ -12,14 +12,26 @@ jobs:
       prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
 
     steps:
-      # First, checkout the repository to access the files
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # Parse variables (in your actual workflow, replace this with your logic to fetch variables)
       - name: Parse variables
         id: parse-vars
         run: |
           # Here you can parse your variables.yaml file or fetch variables from any source
           # For demonstration purposes, let's just echo some values
           echo "::set-output name=prod-repository::prod-shido-jenkins"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Build Docker image
+        id: build-image
+        run: |
+          docker build -t prod-shido-jenkins .
+          docker tag prod-shido-jenkins:latest 096085577054.dkr.ecr.us-east-1.amazonaws.com/prod-shido-jenkins:latest
+          
+      - name: Push Docker image to ECR
+        id: push-image
+        run: docker push 096085577054.dkr.ecr.us-east-1.amazonaws.com/prod-shido-jenkins:latest
