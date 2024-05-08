@@ -12,9 +12,9 @@ jobs:
       prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        #uses: ./.github/workflows/fetch_variables.yaml
+      #- name: Checkout
+       # uses: actions/checkout@v3
+       #uses: ./.github/workflows/fetch_variables.yaml
         
       - name: Parse variables
         id: parse-vars
