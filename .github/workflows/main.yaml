@@ -5,9 +5,6 @@ on:
     #branches:
      # - main
 
-env:
-  WORKFLOW_FILE_PATH: '.github/workflows/main.yml'
-
 jobs:
   fetch-variables:
     runs-on: ubuntu-latest
@@ -15,25 +12,14 @@ jobs:
       prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        
+      # First, checkout the repository to access the files
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Parse variables (in your actual workflow, replace this with your logic to fetch variables)
       - name: Parse variables
         id: parse-vars
         run: |
           # Here you can parse your variables.yaml file or fetch variables from any source
           # For demonstration purposes, let's just echo some values
           echo "::set-output name=prod-repository::prod-shido-jenkins"
-
-      # Trigger the main workflow
-      - name: Trigger Main Workflow
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: trigger-main-workflow
-          commit-message: Trigger Main Workflow
-          title: Trigger Main Workflow
-          body: |
-            This pull request is used to trigger the main workflow.
-        env:
-          PROD_REPOSITORY: ${{ steps.parse-vars.outputs.prod-repository }}
