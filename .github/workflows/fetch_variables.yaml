@@ -11,27 +11,40 @@ jobs:
     outputs:
       prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
 
-    steps:
-      #- name: Checkout
-       # uses: actions/checkout@v3
-       #uses: ./.github/workflows/fetch_variables.yaml
-        
-      - name: Parse variables
-        id: parse-vars
-        run: |
-          # Here you can parse your variables.yaml file or fetch variables from any source
-          # For demonstration purposes, let's just echo some values
-          echo "::set-output name=prod-repository::prod-shido-jenkins"
+    env:
+      WORKFLOW_FILE_PATH: '.github/workflows/main.yml'
+      JOB_SECTION: |
+        fetch-variables:
+          runs-on: ubuntu-latest
+          outputs:
+            prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
 
-      # Trigger the main workflow
-      - name: Trigger Main Workflow
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: trigger-main-workflow
-          commit-message: Trigger Main Workflow
-          title: Trigger Main Workflow
-          body: |
-            This pull request is used to trigger the main workflow.
-        env:
-          PROD_REPOSITORY: ${{ steps.parse-vars.outputs.prod-repository }}
+          steps:
+            - name: Parse variables
+              id: parse-vars
+              run: |
+                # Here you can parse your variables.yaml file or fetch variables from any source
+                # For demonstration purposes, let's just echo some values
+                echo "::set-output name=prod-repository::prod-shido-jenkins"
+
+            # Trigger the main workflow
+            - name: Trigger Main Workflow
+              uses: peter-evans/create-pull-request@v3
+              with:
+                token: ${{ secrets.GITHUB_TOKEN }}
+                branch: trigger-main-workflow
+                commit-message: Trigger Main Workflow
+                title: Trigger Main Workflow
+                body: |
+                  This pull request is used to trigger the main workflow.
+              env:
+                PROD_REPOSITORY: ${{ steps.parse-vars.outputs.prod-repository }}
+
+    steps:
+      - name: Load Variables
+        run: echo "$WORKFLOW_FILE_PATH" > $GITHUB_ENV
+        shell: bash
+
+      - name: Load Job Section
+        run: echo "$JOB_SECTION" > $GITHUB_ENV
+        shell: bash
