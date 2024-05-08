@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  WORKFLOW_FILE_PATH: '.github/workflows/main.yml'
+
 jobs:
   fetch-variables:
     runs-on: ubuntu-latest
