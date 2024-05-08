@@ -2,8 +2,8 @@ name: Fetch Variables and Trigger Build
 
 on:
   push:
-    branches:
-      - main
+    #branches:
+     # - main
 
 env:
   WORKFLOW_FILE_PATH: '.github/workflows/main.yml'
