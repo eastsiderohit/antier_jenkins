@@ -22,7 +22,7 @@ jobs:
       - name: Load Variables
         id: load-variables
         run: |
-          echo "WORKFLOW_FILE_PATH='.github/workflows/main.yml'" >> $GITHUB_ENV
+          echo "WORKFLOW_FILE_PATH='.github/workflows/main.yaml'" >> $GITHUB_ENV
 
       # Parse variables for Main Branch
       - name: Parse variables - Main Branch
@@ -52,7 +52,7 @@ jobs:
       - name: Load Variables
         id: load-variables
         run: |
-          echo "WORKFLOW_FILE_PATH='.github/workflows/main.yml'" >> $GITHUB_ENV
+          echo "WORKFLOW_FILE_PATH='.github/workflows/main.yaml'" >> $GITHUB_ENV
 
       # Parse variables for Stage Branch
       - name: Parse variables - Stage Branch
