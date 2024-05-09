@@ -4,15 +4,17 @@ on:
   push:
     branches:
       - main
+      - stage
 
 jobs:
-  fetch-variables:
+  fetch-variables-main:
     runs-on: ubuntu-latest
     outputs:
       prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
+      ecr-endpoint: ${{ steps.parse-vars.outputs.ecr-endpoint }}
+      ecr-push-command: ${{ steps.parse-vars.outputs.ecr-push-command }}
 
     steps:
-      # First, checkout the repository to access the files
       - name: Checkout Repository
         uses: actions/checkout@v2
 
@@ -22,22 +24,45 @@ jobs:
         run: |
           echo "WORKFLOW_FILE_PATH='.github/workflows/main.yml'" >> $GITHUB_ENV
 
-      # Parse variables (in your actual workflow, replace this with your logic to fetch variables)
-      - name: Parse variables
+      # Parse variables for Main Branch
+      - name: Parse variables - Main Branch
         id: parse-vars
         run: |
-          # Here you can parse your variables.yaml file or fetch variables from any source
-          # For demonstration purposes, let's just echo some values
-          echo "::set-output name=prod-repository::prod-shido-jenkins"
+          if [[ ${{ github.ref }} == 'refs/heads/main' ]]; then
+            echo "::set-output name=prod-repository::prod-shido-jenkins"
+            echo "::set-output name=ecr-endpoint::096085577054.dkr.ecr.us-east-1.amazonaws.com"
+            echo "::set-output name=ecr-push-command::'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.us-east-1.amazonaws.com'"
+          else
+            echo "Unsupported branch."
+            exit 1
+          fi
 
-      # Trigger the main workflow
-      - name: Trigger Main Workflow
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Trigger Main Workflow
-          title: Trigger Main Workflow
-          body: |
-            This pull request is used to trigger the main workflow.
-        env:
-          PROD_REPOSITORY: ${{ steps.parse-vars.outputs.prod-repository }}
+  fetch-variables-stage:
+    runs-on: ubuntu-latest
+    outputs:
+      prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
+      ecr-endpoint: ${{ steps.parse-vars.outputs.ecr-endpoint }}
+      ecr-push-command: ${{ steps.parse-vars.outputs.ecr-push-command }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Load Variables
+      - name: Load Variables
+        id: load-variables
+        run: |
+          echo "WORKFLOW_FILE_PATH='.github/workflows/main.yml'" >> $GITHUB_ENV
+
+      # Parse variables for Stage Branch
+      - name: Parse variables - Stage Branch
+        id: parse-vars
+        run: |
+          if [[ ${{ github.ref }} == 'refs/heads/stage' ]]; then
+            echo "::set-output name=prod-repository::stage-shido-jenkins"
+            echo "::set-output name=ecr-endpoint::096085577054.dkr.ecr.eu-west-1.amazonaws.com"
+            echo "::set-output name=ecr-push-command::'aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.eu-west-1.amazonaws.com'"
+          else
+            echo "Unsupported branch."
+            exit 1
+          fi
