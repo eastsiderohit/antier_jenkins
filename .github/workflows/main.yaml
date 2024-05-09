@@ -6,35 +6,49 @@ on:
 jobs:
   fetch-variables:
     runs-on: ubuntu-latest
+
     outputs:
-      prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
+      prod-repository-main: ${{ steps.fetch-variables-main.outputs.prod-repository }}
+      ecr-endpoint-main: ${{ steps.fetch-variables-main.outputs.ecr-endpoint }}
+      ecr-push-command-main: ${{ steps.fetch-variables-main.outputs.ecr-push-command }}
+      prod-repository-stage: ${{ steps.fetch-variables-stage.outputs.prod-repository }}
+      ecr-endpoint-stage: ${{ steps.fetch-variables-stage.outputs.ecr-endpoint }}
+      ecr-push-command-stage: ${{ steps.fetch-variables-stage.outputs.ecr-push-command }}
 
     steps:
+      - name: Fetch Variables - Main Branch
+        id: fetch-variables-main
+        uses: ./.github/workflows/fetch_variables.yaml
+
+      - name: Fetch Variables - Stage Branch
+        id: fetch-variables-stage
+        uses: ./.github/workflows/fetch_variables.yaml
+
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Parse variables
-        id: parse-vars
+      # Login to Amazon ECR using the provided ECR credentials for Main Branch
+      - name: Login to Amazon ECR - Main Branch
+        id: login-ecr-main
         run: |
-          # Here you can parse your variables.yaml file or fetch variables from any source
-          # For demonstration purposes, let's just echo some values
-          echo "::set-output name=prod-repository::prod-shido-jenkins"
+          eval "${{ steps.fetch-variables-main.outputs.ecr-push-command-main }}"
 
-      - name: Login to Amazon ECR
-        id: login-ecr
+      # Login to Amazon ECR using the provided ECR credentials for Stage Branch
+      - name: Login to Amazon ECR - Stage Branch
+        id: login-ecr-stage
         run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.us-east-1.amazonaws.com
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          eval "${{ steps.fetch-variables-stage.outputs.ecr-push-command-stage }}"
 
-      - name: Build Docker image
-        id: build-image
+      # Build and push Docker image for Main Branch
+      - name: Build and Push Docker image - Main Branch
         run: |
-          docker build -t prod-shido-jenkins .
-          docker tag prod-shido-jenkins:latest 096085577054.dkr.ecr.us-east-1.amazonaws.com/prod-shido-jenkins:latest
-          
-      - name: Push Docker image to ECR
-        id: push-image
+          docker build -t ${{ steps.fetch-variables-main.outputs.prod-repository-main }} .
+          docker tag ${{ steps.fetch-variables-main.outputs.prod-repository-main }}:latest ${{ steps.fetch-variables-main.outputs.ecr-endpoint-main }}/${{ steps.fetch-variables-main.outputs.prod-repository-main }}:latest
+          docker push ${{ steps.fetch-variables-main.outputs.ecr-endpoint-main }}/${{ steps.fetch-variables-main.outputs.prod-repository-main }}:latest
+
+      # Build and push Docker image for Stage Branch
+      - name: Build and Push Docker image - Stage Branch
         run: |
-          docker push 096085577054.dkr.ecr.us-east-1.amazonaws.com/prod-shido-jenkins:latest
+          docker build -t ${{ steps.fetch-variables-stage.outputs.prod-repository-stage }} .
+          docker tag ${{ steps.fetch-variables-stage.outputs.prod-repository-stage }}:latest ${{ steps.fetch-variables-stage.outputs.ecr-endpoint-stage }}/${{ steps.fetch-variables-stage.outputs.prod-repository-stage }}:latest
+          docker push ${{ steps.fetch-variables-stage.outputs.ecr-endpoint-stage }}/${{ steps.fetch-variables-stage.outputs.prod-repository-stage }}:latest
