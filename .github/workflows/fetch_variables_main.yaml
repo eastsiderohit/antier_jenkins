@@ -1,4 +1,4 @@
-name: Fetch Variables and Trigger Build (Main Branch)
+name: Fetch Variables for Main Branch
 
 on:
   push:
@@ -6,16 +6,12 @@ on:
       - main
 
 jobs:
-  fetch-variables-main:
+  fetch-variables:
     runs-on: ubuntu-latest
-    outputs:
-      prod-repository: ${{ steps.parse-vars.outputs.prod-repository }}
-      ecr-endpoint: ${{ steps.parse-vars.outputs.ecr-endpoint }}
-      ecr-push-command: ${{ steps.parse-vars.outputs.ecr-push-command }}
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Load Variables
       - name: Load Variables
@@ -23,9 +19,9 @@ jobs:
         run: |
           echo "WORKFLOW_FILE_PATH='.github/workflows/main.yaml'" >> $GITHUB_ENV
 
-      # Parse variables for Main Branch
-      - name: Parse variables - Main Branch
-        id: parse-vars
+      # Set outputs for Main Branch
+      - name: Set Outputs - Main Branch
+        id: set-outputs-main
         run: |
           echo "::set-output name=prod-repository::prod-shido-jenkins"
           echo "::set-output name=ecr-endpoint::096085577054.dkr.ecr.us-east-1.amazonaws.com"
