@@ -28,12 +28,12 @@ jobs:
       - name: Parse variables - Main Branch
         id: parse-vars
         run: |
-          if [[ "${{ github.event_name }}" == 'push' && "${{ github.ref }}" == 'refs/heads/main' ]]; then
+          if [[ "${{ github.ref }}" == 'refs/heads/main' ]]; then
             echo "::set-output name=prod-repository::prod-shido-jenkins"
             echo "::set-output name=ecr-endpoint::096085577054.dkr.ecr.us-east-1.amazonaws.com"
             echo "::set-output name=ecr-push-command::'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.us-east-1.amazonaws.com'"
           else
-            echo "Unsupported event or branch."
+            echo "Skipping: Not main branch"
             exit 1
           fi
 
@@ -58,11 +58,11 @@ jobs:
       - name: Parse variables - Stage Branch
         id: parse-vars
         run: |
-          if [[ "${{ github.event_name }}" == 'push' && "${{ github.ref }}" == 'refs/heads/stage' ]]; then
+          if [[ "${{ github.ref }}" == 'refs/heads/stage' ]]; then
             echo "::set-output name=prod-repository::stage-shido-jenkins"
             echo "::set-output name=ecr-endpoint::096085577054.dkr.ecr.eu-west-1.amazonaws.com"
             echo "::set-output name=ecr-push-command::'aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.eu-west-1.amazonaws.com'"
           else
-            echo "Unsupported event or branch."
+            echo "Skipping: Not main branch"
             exit 1
           fi
