@@ -2,6 +2,9 @@ name: Fetch Variables and Trigger Build
 
 on:
   push:
+    branches:
+      - main
+      - stage
 
 jobs:
   fetch-variables:
@@ -18,11 +21,11 @@ jobs:
     steps:
       - name: Fetch Variables - Main Branch
         id: fetch-variables-main
-        uses: ./.github/workflows/fetch_variables.yaml
+        uses: ./.github/workflows/fetch_variables_main.yaml
 
       - name: Fetch Variables - Stage Branch
         id: fetch-variables-stage
-        uses: ./.github/workflows/fetch_variables.yaml
+        uses: ./.github/workflows/fetch_variables_stage.yaml
 
       - name: Checkout Repository
         uses: actions/checkout@v2
