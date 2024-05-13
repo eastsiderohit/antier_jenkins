@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/workflows/fetch_variables_stage.yaml
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Login to Amazon ECR using the provided ECR credentials for Main Branch
       - name: Login to Amazon ECR - Main Branch
