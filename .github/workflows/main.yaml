@@ -1,54 +1,73 @@
-name: Fetch Variables and Trigger Build
+name: Push the Docker image to AWS ECR Repos (Multi-Region)
 
 on:
   push:
-
+  
 jobs:
-  fetch-variables:
+  Fetch-Variables:
+    name: Fetch Variables
     runs-on: ubuntu-latest
-
-    outputs:
-      prod-repository-main: ${{ steps.fetch-variables-main.outputs.prod-repository }}
-      ecr-endpoint-main: ${{ steps.fetch-variables-main.outputs.ecr-endpoint }}
-      ecr-push-command-main: ${{ steps.fetch-variables-main.outputs.ecr-push-command }}
-      prod-repository-stage: ${{ steps.fetch-variables-stage.outputs.prod-repository }}
-      ecr-endpoint-stage: ${{ steps.fetch-variables-stage.outputs.ecr-endpoint }}
-      ecr-push-command-stage: ${{ steps.fetch-variables-stage.outputs.ecr-push-command }}
-
     steps:
-      - name: Fetch Variables - Main Branch
-        id: fetch-variables-main
+      - name: Fetch variables
         uses: ./.github/workflows/fetch_variables.yaml
+        id: vars
 
-      - name: Fetch Variables - Stage Branch
-        id: fetch-variables-stage
-        uses: ./.github/workflows/fetch_variables.yaml
-
-      - name: Checkout Repository
+  Build-Prod-Main:
+    name: Build and Push to Prod Region (us-east-1) - Main Branch
+    runs-on: ubuntu-latest
+    needs: [Fetch-Variables]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
         uses: actions/checkout@v2
 
-      # Login to Amazon ECR using the provided ECR credentials for Main Branch
-      - name: Login to Amazon ECR - Main Branch
-        id: login-ecr-main
-        run: |
-          eval "${{ steps.fetch-variables-main.outputs.ecr-push-command-main }}"
+      # Continue with your build steps using the fetched variables
+      - name: Configure AWS credentials (Prod Region)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      # Login to Amazon ECR using the provided ECR credentials for Stage Branch
-      - name: Login to Amazon ECR - Stage Branch
-        id: login-ecr-stage
-        run: |
-          eval "${{ steps.fetch-variables-stage.outputs.ecr-push-command-stage }}"
+      - name: Login to Amazon ECR (Prod Region)
+        uses: aws-actions/amazon-ecr-login@v1
 
-      # Build and push Docker image for Main Branch
-      - name: Build and Push Docker image - Main Branch
+      - name: Build, tag, and push image to Amazon ECR (Prod Region) - Main Branch
+        env:
+          ECR_ENDPOINT: ${{ needs.Fetch-Variables.outputs.ecr-endpoint }}
+          ECR_REPOSITORY: ${{ needs.Fetch-Variables.outputs.prod-repository-main }}
+          ECR_PUSH_COMMAND: ${{ needs.Fetch-Variables.outputs.ecr-push-command-main }}
         run: |
-          docker build -t ${{ steps.fetch-variables-main.outputs.prod-repository-main }} .
-          docker tag ${{ steps.fetch-variables-main.outputs.prod-repository-main }}:latest ${{ steps.fetch-variables-main.outputs.ecr-endpoint-main }}/${{ steps.fetch-variables-main.outputs.prod-repository-main }}:latest
-          docker push ${{ steps.fetch-variables-main.outputs.ecr-endpoint-main }}/${{ steps.fetch-variables-main.outputs.prod-repository-main }}:latest
+          # Use the fetched variables to build and push the Docker image
+          echo "Building and pushing Docker image to ECR..."
+          $ECR_PUSH_COMMAND $ECR_ENDPOINT/$ECR_REPOSITORY:latest
 
-      # Build and push Docker image for Stage Branch
-      - name: Build and Push Docker image - Stage Branch
+  Build-Prod-Stage:
+    name: Build and Push to Prod Region (us-east-1) - Stage Branch
+    runs-on: ubuntu-latest
+    needs: [Fetch-Variables]
+    if: github.ref == 'refs/heads/stage'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Continue with your build steps using the fetched variables
+      - name: Configure AWS credentials (Prod Region)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-1
+
+      - name: Login to Amazon ECR (Prod Region)
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR (Prod Region) - Stage Branch
+        env:
+          ECR_ENDPOINT: ${{ needs.Fetch-Variables.outputs.ecr-endpoint }}
+          ECR_REPOSITORY: ${{ needs.Fetch-Variables.outputs.prod-repository-stage }}
+          ECR_PUSH_COMMAND: ${{ needs.Fetch-Variables.outputs.ecr-push-command-stage }}
         run: |
-          docker build -t ${{ steps.fetch-variables-stage.outputs.prod-repository-stage }} .
-          docker tag ${{ steps.fetch-variables-stage.outputs.prod-repository-stage }}:latest ${{ steps.fetch-variables-stage.outputs.ecr-endpoint-stage }}/${{ steps.fetch-variables-stage.outputs.prod-repository-stage }}:latest
-          docker push ${{ steps.fetch-variables-stage.outputs.ecr-endpoint-stage }}/${{ steps.fetch-variables-stage.outputs.prod-repository-stage }}:latest
+          # Use the fetched variables to build and push the Docker image
+          echo "Building and pushing Docker image to ECR..."
+          $ECR_PUSH_COMMAND $ECR_ENDPOINT/$ECR_REPOSITORY:latest
