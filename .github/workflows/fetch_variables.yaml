@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # Load Variables
+      # Load Variables (Optional, remove if not needed)
       - name: Load Variables
         id: load-variables
         run: |
@@ -48,7 +48,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # Load Variables
+      # Load Variables (Optional, remove if not needed)
       - name: Load Variables
         id: load-variables
         run: |
@@ -63,6 +63,6 @@ jobs:
             echo "::set-output name=ecr-endpoint::096085577054.dkr.ecr.eu-west-1.amazonaws.com"
             echo "::set-output name=ecr-push-command::'aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 096085577054.dkr.ecr.eu-west-1.amazonaws.com'"
           else
-            echo "Skipping: Not main branch"
+            echo "Skipping: Not stage branch"
             exit 1
           fi
